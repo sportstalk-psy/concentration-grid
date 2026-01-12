@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Concentration Grid</title>
+  <style>
+    :root { --gap: 6px; --cell: 44px; --border: #1f2937; --bg: #fff; --muted:#6b7280; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#f5f6f8; }
+    header { padding:14px 16px; background:#2c86c9; color:#fff; font-weight:700; letter-spacing:.02em; }
+    main { max-width: 520px; margin: 0 auto; padding: 16px; }
+    .card { background: var(--bg); border-radius: 14px; padding: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.06); }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .grow { flex:1; }
+    button { cursor:pointer; border:0; border-radius:10px; padding:12px 14px; font-weight:700; }
+    .btn-start { background:#ef4444; color:#fff; }
+    .btn-cancel { background:#ef4444; color:#fff; width:100%; margin-top:12px; }
+    .btn-again { background:#22c55e; color:#fff; width:100%; margin-top:12px; }
+    .stats { margin-top: 10px; color: var(--muted); font-weight:600; display:flex; justify-content:space-between; }
+    .grid {
+      margin-top: 12px;
+      display:grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: var(--gap);
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action: manipulation;
+    }
+    .cell {
+      height: var(--cell);
+      background:#fff;
+      border:2px solid var(--border);
+      border-radius: 10px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800;
+      color:#111827;
+      font-variant-numeric: tabular-nums;
+    }
+    .cell:disabled { opacity:.35; }
+    .cell.good { background:#e5e7eb; }
+    .top { margin-bottom:12px; }
+    .title { font-size: 28px; font-weight: 800; margin: 0 0 10px; }
+    .help { color:#374151; line-height:1.4; margin:0 0 10px; }
+    .hidden { display:none !important; }
+    .result { font-size: 20px; font-weight: 800; margin: 0 0 6px; }
+    .history { margin-top: 10px; color:#374151; font-size:14px; }
+    .history ul { margin:8px 0 0; padding-left: 18px; }
+  </style>
+</head>
+<body>
+  <header>CONCENTRATION GRIDS</header>
+  <main>
+    <div class="card top" id="intro">
+      <p class="title">The Concentration Grid</p>
+      <p class="help">
+        Нажимай числа по порядку от <b>00</b> до <b>99</b>. Время запишется автоматически.
+      </p>
+      <div class="row">
+        <button class="btn-start" id="startBtn">START</button>
+        <div class="grow"></div>
+      </div>
+      <div class="history" id="historyBox"></div>
+    </div>
+
+    <div class="card hidden" id="game">
+      <div class="stats">
+        <div>Time: <span id="time">0.0</span></div>
+        <div>CURRENT NUMBER: <span id="current">00</span></div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <button class="btn-cancel" id="cancelBtn">CANCEL</button>
+    </div>
+
+    <div class="card hidden" id="done">
+      <p class="result">Congratulations!</p>
+      <p class="help">Ты завершила сетку за: <b id="finalTime">0:00</b></p>
+      <button class="btn-again" id="againBtn">CONTINUE TO PRACTICE</button>
+    </div>
+  </main>
+
+  <script>
+    const startBtn = document.getElementById('startBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const againBtn  = document.getElementById('againBtn');
+
+    const intro = document.getElementById('intro');
+    const game  = document.getElementById('game');
+    const done  = document.getElementById('done');
+
+    const gridEl = document.getElementById('grid');
+    const timeEl = document.getElementById('time');
+    const curEl  = document.getElementById('current');
+    const finalTimeEl = document.getElementById('finalTime');
+    const historyBox = document.getElementById('historyBox');
+
+    let expected = 0;
+    let startTs = null;
+    let rafId = null;
+    let running = false;
+
+    function pad2(n){ return String(n).padStart(2,'0'); }
+
+    function shuffle(a){
+      for(let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i],a[j]] = [a[j],a[i]];
+      }
+      return a;
+    }
+
+    function formatMs(ms){
+      const totalSec = Math.floor(ms/1000);
+      const m = Math.floor(totalSec/60);
+      const s = totalSec%60;
+      return `${m}:${String(s).padStart(2,'0')}`;
+    }
+
+    function tick(){
+      if(!running) return;
+      const ms = performance.now() - startTs;
+      timeEl.textContent = (ms/1000).toFixed(1);
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function stopTimer(){
+      running = false;
+      if(rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    function buildGrid(){
+      gridEl.innerHTML = '';
+      const nums = shuffle(Array.from({length:100}, (_,i)=>i));
+      nums.forEach(n=>{
+        const btn = document.createElement('button');
+        btn.className = 'cell';
+        btn.type = 'button';
+        btn.textContent = pad2(n);
+        btn.dataset.value = String(n);
+
+        btn.addEventListener('click', ()=>{
+          if(!running) return;
+          const v = Number(btn.dataset.value);
+          if(v !== expected) return; // неправильный тап — просто игнорим (можно сделать вибро/ошибку)
+          btn.classList.add('good');
+          btn.disabled = true;
+          expected++;
+          curEl.textContent = pad2(expected);
+
+          if(expected === 100){
+            const ms = performance.now() - startTs;
+            finish(ms);
+          }
+        });
+
+        gridEl.appendChild(btn);
+      });
+    }
+
+    function showHistory(){
+      const key = 'cg_history';
+      const list = JSON.parse(localStorage.getItem(key) || '[]');
+      if(list.length === 0){
+        historyBox.innerHTML = '<b>История:</b> пока пусто';
+        return;
+      }
+      const items = list.slice(-5).reverse().map(x=>`<li>${x.time} — ${new Date(x.at).toLocaleString()}</li>`).join('');
+      historyBox.innerHTML = `<b>История (последние 5):</b><ul>${items}</ul>`;
+    }
+
+    function saveHistory(ms){
+      const key = 'cg_history';
+      const list = JSON.parse(localStorage.getItem(key) || '[]');
+      list.push({ ms, time: formatMs(ms), at: Date.now() });
+      localStorage.setItem(key, JSON.stringify(list));
+    }
+
+    function start(){
+      expected = 0;
+      curEl.textContent = '00';
+      timeEl.textContent = '0.0';
+      buildGrid();
+
+      intro.classList.add('hidden');
+      done.classList.add('hidden');
+      game.classList.remove('hidden');
+
+      // iOS/Safari: старт после явного клика, чтобы всё корректно
+      startTs = performance.now();
+      running = true;
+      tick();
+    }
+
+    function cancel(){
+      stopTimer();
+      intro.classList.remove('hidden');
+      game.classList.add('hidden');
+      done.classList.add('hidden');
+      showHistory();
+    }
+
+    function finish(ms){
+      stopTimer();
+      saveHistory(ms);
+      finalTimeEl.textContent = formatMs(ms);
+
+      game.classList.add('hidden');
+      done.classList.remove('hidden');
+      showHistory();
+    }
+
+    startBtn.addEventListener('click', start);
+    cancelBtn.addEventListener('click', cancel);
+    againBtn.addEventListener('click', start);
+
+    showHistory();
+  </script>
+</body>
+</html>
