@@ -225,6 +225,7 @@
       // iOS/Safari: старт после явного клика, чтобы всё корректно
       startTs = performance.now();
       running = true;
+      expected = 99; // TEMP: быстрый финиш для теста отправки результата
       tick();
     }
 
