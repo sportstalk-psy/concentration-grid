@@ -232,8 +232,8 @@
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
-          time_ms: ms,
-          time: formatMs(ms),
+          time_ms: 0,
+          time: "TEST_START",
           anon_id: getAnonId(),
           phone: localStorage.getItem("cg_phone") || "",
           page: location.href,
