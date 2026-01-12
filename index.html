@@ -7,16 +7,17 @@
   <style>
     :root { --gap: 6px; --cell: 44px; --border: #1f2937; --bg: #fff; --muted:#6b7280; }
     body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#f5f6f8; }
-    header { padding:14px 16px; background:#2c86c9; color:#fff; font-weight:700; letter-spacing:.02em; }
+    header { padding:14px 16px; background:#11161c; color:#fff; font-weight:700; letter-spacing:.02em; }
     main { max-width: 520px; margin: 0 auto; padding: 16px; }
     .card { background: var(--bg); border-radius: 14px; padding: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.06); }
     .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .grow { flex:1; }
     button { cursor:pointer; border:0; border-radius:10px; padding:12px 14px; font-weight:700; }
-    .btn-start { background:#ef4444; color:#fff; }
-    .btn-cancel { background:#ef4444; color:#fff; width:100%; margin-top:12px; }
-    .btn-again { background:#22c55e; color:#fff; width:100%; margin-top:12px; }
+    .btn-start { background:#cefa07; color:#11161c; }
+    .btn-cancel { background:#11161c; color:#cefa07; width:100%; margin-top:12px; }
+    .btn-again { background:#cefa07; color:#11161c; width:100%; margin-top:12px; }
     .stats { margin-top: 10px; color: var(--muted); font-weight:600; display:flex; justify-content:space-between; }
+    .cell.bad { background:#f96262; border-color:#bc2b2b; }
     .grid {
       margin-top: 12px;
       display:grid;
