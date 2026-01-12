@@ -147,6 +147,12 @@
           // ❌ Неправильный тап — подсветить красным на мгновение
           if (v !== expected) {
             btn.classList.add('bad');
+
+             // 📳 вибрация (ТОЛЬКО если поддерживается)
+               if (window.navigator && window.navigator.vibrate) {
+                 navigator.vibrate(30);
+               }
+            
             setTimeout(() => btn.classList.remove('bad'), 180);
             return;
           }
