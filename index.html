@@ -229,10 +229,11 @@
 
       fetch("https://script.google.com/macros/s/AKfycbxcIpdFg1nqxps6YplBC8z4tL3loNXZbBntEx2RNmCTp4SBhdMVeBvojcS5gVgMZWHY/exec", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
-          time_ms: 0,
-          time: "TEST_START",
+          time_ms: ms,
+          time: formatMs(ms),
           anon_id: getAnonId(),
           phone: localStorage.getItem("cg_phone") || "",
           page: location.href,
