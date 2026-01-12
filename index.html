@@ -226,22 +226,6 @@
       startTs = performance.now();
       running = true;
       tick();
-
-      fetch("https://script.google.com/macros/s/AKfycbxcIpdFg1nqxps6YplBC8z4tL3loNXZbBntEx2RNmCTp4SBhdMVeBvojcS5gVgMZWHY/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          time_ms: 0,
-          time: "TEST_START",
-          anon_id: getAnonId(),
-          phone: localStorage.getItem("cg_phone") || "",
-          page: location.href,
-          utm: new URLSearchParams(location.search).toString(),
-          ua: navigator.userAgent
-        })
-      });
-
     }
 
     function cancel(){
