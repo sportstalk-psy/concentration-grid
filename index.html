@@ -68,7 +68,6 @@
         <div>Время: <span id="time">0.0</span></div>
         <div>Номер сессии: <span id="current">00</span></div>
       </div>
-      <div class="stats">DEBUG: expected=<span id="dbgExpected">0</span>, last=<span id="dbgLast">-</span></div>
       <div class="grid" id="grid"></div>
       <button class="btn-cancel" id="cancelBtn">ВЫЙТИ</button>
     </div>
@@ -84,9 +83,6 @@
     const startBtn = document.getElementById('startBtn');
     const cancelBtn = document.getElementById('cancelBtn');
     const againBtn  = document.getElementById('againBtn');
-
-    const dbgExpectedEl = document.getElementById('dbgExpected');
-    const dbgLastEl = document.getElementById('dbgLast');
 
     const intro = document.getElementById('intro');
     const game  = document.getElementById('game');
@@ -164,9 +160,6 @@
         btn.dataset.value = String(n);
 
         btn.addEventListener('click', () => {
-          dbgLastEl.textContent = btn.dataset.value;
-          dbgExpectedEl.textContent = String(expected);
-
           if (!running) return;
 
           const v = Number(btn.dataset.value);
@@ -232,9 +225,6 @@
       // iOS/Safari: старт после явного клика, чтобы всё корректно
       startTs = performance.now();
       running = true;
-      expected = 99; // TEMP: быстрый финиш для теста отправки результата
-      dbgExpectedEl.textContent = String(expected);
-      dbgLastEl.textContent = "-";
       tick();
     }
 
