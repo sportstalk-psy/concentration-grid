@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Concentration Grid</title>
+  <title>Таблица Шульте</title>
   <style>
     :root { --gap: 6px; --cell: 44px; --border: #1f2937; --bg: #fff; --muted:#6b7280; }
     body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#f5f6f8; }
@@ -48,15 +48,15 @@
   </style>
 </head>
 <body>
-  <header>CONCENTRATION GRIDS</header>
+  <header>Таблица Шульте</header>
   <main>
     <div class="card top" id="intro">
-      <p class="title">The Concentration Grid</p>
+      <p class="title">Тренировка концентрации</p>
       <p class="help">
         Нажимай числа по порядку от <b>00</b> до <b>99</b>. Время запишется автоматически.
       </p>
       <div class="row">
-        <button class="btn-start" id="startBtn">START</button>
+        <button class="btn-start" id="startBtn">НАЧАТЬ</button>
         <div class="grow"></div>
       </div>
       <div class="history" id="historyBox"></div>
@@ -64,17 +64,17 @@
 
     <div class="card hidden" id="game">
       <div class="stats">
-        <div>Time: <span id="time">0.0</span></div>
-        <div>CURRENT NUMBER: <span id="current">00</span></div>
+        <div>Время: <span id="time">0.0</span></div>
+        <div>Номер сессии: <span id="current">00</span></div>
       </div>
       <div class="grid" id="grid"></div>
-      <button class="btn-cancel" id="cancelBtn">CANCEL</button>
+      <button class="btn-cancel" id="cancelBtn">ВЫЙТИ</button>
     </div>
 
     <div class="card hidden" id="done">
-      <p class="result">Congratulations!</p>
-      <p class="help">Ты завершила сетку за: <b id="finalTime">0:00</b></p>
-      <button class="btn-again" id="againBtn">CONTINUE TO PRACTICE</button>
+      <p class="result">Поздравляем!</p>
+      <p class="help">Вы завершили сетку за: <b id="finalTime">0:00</b></p>
+      <button class="btn-again" id="againBtn">Повторить тренировку</button>
     </div>
   </main>
 
@@ -138,16 +138,26 @@
         btn.textContent = pad2(n);
         btn.dataset.value = String(n);
 
-        btn.addEventListener('click', ()=>{
-          if(!running) return;
+        btn.addEventListener('click', () => {
+          if (!running) return;
+
           const v = Number(btn.dataset.value);
-          if(v !== expected) return; // неправильный тап — просто игнорим (можно сделать вибро/ошибку)
+
+          // ❌ Неправильный тап — подсветить красным на мгновение
+          if (v !== expected) {
+            btn.classList.add('bad');
+            setTimeout(() => btn.classList.remove('bad'), 180);
+            return;
+          }
+
+          // ✅ Правильный тап — сделать серым и заблокировать
           btn.classList.add('good');
           btn.disabled = true;
+
           expected++;
           curEl.textContent = pad2(expected);
 
-          if(expected === 100){
+          if (expected === 100) {
             const ms = performance.now() - startTs;
             finish(ms);
           }
