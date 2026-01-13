@@ -206,6 +206,21 @@
       localStorage.setItem(key, JSON.stringify(list));
     }
 
+    function normalizePhone(raw) {
+      const s = String(raw || "").trim();
+      if (!s) return "";
+      // оставляем только цифры
+      let d = s.replace(/\D+/g, "");
+      // РФ: 8XXXXXXXXXX -> 7XXXXXXXXXX
+      if (d.length === 11 && d.startsWith("8")) d = "7" + d.slice(1);
+      // РФ: 9XXXXXXXXX -> 7XXXXXXXXXX
+      if (d.length === 10 && d.startsWith("9")) d = "7" + d;
+      // если получилось 11 цифр и начинается с 7 — ок
+      if (d.length === 11 && d.startsWith("7")) return d;
+      // иначе возвращаем как есть (на будущее: другие страны)
+      return d;
+    }
+    
     function sendResult(ms, eventName){
       const consent = localStorage.getItem("cg_consent") === "1";
       const phone = consent ? (localStorage.getItem("cg_phone") || "") : "";
@@ -283,7 +298,7 @@ function getProfile(){
 
 function setProfile({nickname, phone, consent}){
   if (nickname) localStorage.setItem("cg_nickname", nickname);
-  if (phone !== undefined) localStorage.setItem("cg_phone", phone);
+  if (phone !== undefined) localStorage.setItem("cg_phone", normalizePhone(phoneInputValue));
   localStorage.setItem("cg_consent", consent ? "1" : "0");
 }
 
@@ -309,9 +324,11 @@ function loadLeaderboard() {
         targets.forEach(t => t.innerHTML = "<b>Рейтинг:</b> пока пусто");
         return;
       }
-  const myKey = (localStorage.getItem("cg_consent")==="1" && (localStorage.getItem("cg_phone")||"").trim())
-    ? (localStorage.getItem("cg_phone")||"").trim()
-    : (localStorage.getItem("cg_anon_id")||"");
+  const myPhone = normalizePhone(localStorage.getItem("cg_phone") || "");
+  const myKey =
+    (localStorage.getItem("cg_consent") === "1" && myPhone)
+      ? myPhone
+      : (localStorage.getItem("cg_anon_id") || "");
   
   const items = top.map(x => {
     const seconds = (x.time_ms / 1000).toFixed(1);
