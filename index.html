@@ -62,6 +62,7 @@
         <div class="grow"></div>
       </div>
       <div class="history" id="historyBox"></div>
+      <div class="history" id="leaderboardIntro"></div>
     </div>
 
     <div class="card hidden" id="game">
@@ -286,10 +287,14 @@ function setProfile({nickname, phone, consent}){
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxcIpdFg1nqxps6YplBC8z4tL3loNXZbBntEx2RNmCTp4SBhdMVeBvojcS5gVgMZWHY/exec";
 
 function loadLeaderboard() {
-  const el = document.getElementById("leaderboard");
-  if (!el) return;
-
-  el.innerHTML = "<b>Рейтинг:</b> загружаем…";
+  const targets = [
+    document.getElementById("leaderboard"),
+    document.getElementById("leaderboardIntro")
+  ].filter(Boolean);
+  
+  if (targets.length === 0) return;
+  
+  targets.forEach(el => el.innerHTML = "<b>Рейтинг:</b> загружаем…");
 
   const cbName = "lb_cb_" + Date.now() + "_" + Math.random().toString(16).slice(2);
   const script = document.createElement("script");
@@ -298,7 +303,7 @@ function loadLeaderboard() {
     try {
       const top = Array.isArray(data?.top) ? data.top : [];
       if (top.length === 0) {
-        el.innerHTML = "<b>Рейтинг:</b> пока пусто";
+        targets.forEach(t => t.innerHTML = "<b>Рейтинг:</b> пока пусто");
         return;
       }
       const items = top.map(x => {
@@ -315,7 +320,7 @@ function loadLeaderboard() {
           </li>
         `;
       }).join("");
-      el.innerHTML = `<b>Рейтинг (топ-20):</b><ul>${items}</ul>`;
+      targets.forEach(t => t.innerHTML = `<b>Рейтинг (топ-20):</b><ul>${items}</ul>`);
     } finally {
       cleanup();
     }
@@ -327,7 +332,7 @@ function loadLeaderboard() {
   }
 
   script.onerror = () => {
-    el.innerHTML = "<b>Рейтинг:</b> не удалось загрузить";
+    targets.forEach(t => t.innerHTML = "<b>Рейтинг:</b> не удалось загрузить");
     cleanup();
   };
 
