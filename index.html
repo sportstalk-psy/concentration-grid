@@ -62,12 +62,13 @@
         <div class="grow"></div>
       </div>
       <div class="history" id="historyBox"></div>
+      <div id="leaderboard" class="history"></div>
     </div>
 
     <div class="card hidden" id="game">
       <div class="stats">
         <div>Время: <span id="time">0.0</span></div>
-        <div>Номер сессии: <span id="current">00</span></div>
+        <div>Количество: <span id="current">00</span></div>
       </div>
       <div class="grid" id="grid"></div>
       <button class="btn-cancel" id="cancelBtn">ВЫЙТИ</button>
@@ -75,9 +76,10 @@
 
     <div class="card hidden" id="done">
       <p class="result">Поздравляем!</p>
-      <p class="help">Вы завершили сетку за: <b id="finalTime">0:00</b></p>
+      <p class="help">Вы завершили сессию за: <b id="finalTime">0:00</b></p>
       <button class="btn-again" id="againBtn">Повторить тренировку</button>
       <div id="rankBox" style="margin-top:12px;"></div>
+      <div id="leaderboard" class="history"></div>
     </div>
   </main>
 
@@ -265,6 +267,7 @@
       game.classList.add('hidden');
       done.classList.remove('hidden');
       showHistory();
+      loadLeaderboard();
     }
 
 function getProfile(){
@@ -281,6 +284,35 @@ function setProfile({nickname, phone, consent}){
   localStorage.setItem("cg_consent", consent ? "1" : "0");
 }
 
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxcIpdFg1nqxps6YplBC8z4tL3loNXZbBntEx2RNmCTp4SBhdMVeBvojcS5gVgMZWHY/exec";
+
+async function loadLeaderboard() {
+  const el = document.getElementById("leaderboard");
+  if (!el) return;
+
+  el.innerHTML = "<b>Рейтинг:</b> загружаем…";
+
+  try {
+    const url = `${WEBAPP_URL}?action=leaderboard&limit=20&_=${Date.now()}`;
+    const res = await fetch(url, { method: "GET" });
+    const data = await res.json();
+
+    const top = Array.isArray(data.top) ? data.top : [];
+    if (top.length === 0) {
+      el.innerHTML = "<b>Рейтинг:</b> пока пусто";
+      return;
+    }
+
+    const items = top.map(x =>
+      `<li><b>#${x.rank}</b> ${escapeHtml(x.nickname)} — <b>${escapeHtml(x.time)}</b></li>`
+    ).join("");
+
+    el.innerHTML = `<b>Рейтинг (топ-20):</b><ul>${items}</ul>`;
+  } catch (e) {
+    el.innerHTML = "<b>Рейтинг:</b> не удалось загрузить";
+  }
+}
+    
 function renderRankBox(lastMs){
   const box = document.getElementById("rankBox");
   if (!box) return;
@@ -293,7 +325,7 @@ function renderRankBox(lastMs){
       <div class="history">
         <b>Рейтинг:</b> вы участвуете как <b>${escapeHtml(p.nickname)}</b>
         <div style="margin-top:8px;">
-          <button class="btn-again" id="editProfileBtn" type="button">Изменить ник / телефон</button>
+          <button class="btn-again" id="editProfileBtn" type="button">Изменить ник / телефон / сохранить новый показатель</button>
         </div>
       </div>
     `;
@@ -312,7 +344,7 @@ function renderRankBox(lastMs){
         <button class="btn-again" id="saveToRankBtn" type="button">Да, записать</button>
       </div>
       <div style="margin-top:6px; color:#6b7280; font-size:13px;">
-        Можно без телефона. Ник будет виден в рейтинге.
+        Укажите телефон, если планируете проходить тест с разных устройств, и Ник, который будет виден в рейтинге.
       </div>
     </div>
   `;
@@ -371,6 +403,7 @@ function profileFormHtml(nickname, phone, consent, isEdit){
     
         setProfile({ nickname, phone, consent });
         sendResult(lastMs, "finish_ranked");
+        setTimeout(loadLeaderboard, 800);
         err.textContent = "";
     
         // перерисуем блок и (важно) отправим результат уже с ником/телефоном
