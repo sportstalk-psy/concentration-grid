@@ -77,6 +77,7 @@
       <p class="result">Поздравляем!</p>
       <p class="help">Вы завершили сетку за: <b id="finalTime">0:00</b></p>
       <button class="btn-again" id="againBtn">Повторить тренировку</button>
+      <div id="rankBox" style="margin-top:12px;"></div>
     </div>
   </main>
 
@@ -230,6 +231,7 @@
     function finish(ms){
       stopTimer();
       saveHistory(ms);
+      renderRankBox(ms);
       finalTimeEl.textContent = formatMs(ms);
 
       const payload = new URLSearchParams({
@@ -263,6 +265,124 @@
       showHistory();
     }
 
+function getProfile(){
+  return {
+    nickname: localStorage.getItem("cg_nickname") || "",
+    phone: localStorage.getItem("cg_phone") || "",
+    consent: localStorage.getItem("cg_consent") === "1"
+  };
+}
+
+function setProfile({nickname, phone, consent}){
+  if (nickname) localStorage.setItem("cg_nickname", nickname);
+  if (phone !== undefined) localStorage.setItem("cg_phone", phone);
+  localStorage.setItem("cg_consent", consent ? "1" : "0");
+}
+
+function renderRankBox(lastMs){
+  const box = document.getElementById("rankBox");
+  if (!box) return;
+
+  const p = getProfile();
+
+  // если уже есть ник и согласие — просто показываем “вы в рейтинге”
+  if (p.nickname && p.consent) {
+    box.innerHTML = `
+      <div class="history">
+        <b>Рейтинг:</b> вы участвуете как <b>${escapeHtml(p.nickname)}</b>
+        <div style="margin-top:8px;">
+          <button class="btn-again" id="editProfileBtn" type="button">Изменить ник / телефон</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("editProfileBtn").addEventListener("click", () => {
+      box.innerHTML = profileFormHtml(p.nickname, p.phone, p.consent, true);
+      bindProfileForm(lastMs);
+    });
+    return;
+  }
+
+  // иначе — предлагаем записать
+  box.innerHTML = `
+    <div class="history">
+      <b>Записать результат в рейтинг?</b>
+      <div style="margin-top:8px;">
+        <button class="btn-again" id="saveToRankBtn" type="button">Да, записать</button>
+      </div>
+      <div style="margin-top:6px; color:#6b7280; font-size:13px;">
+        Можно без телефона. Ник будет виден в рейтинге.
+      </div>
+    </div>
+  `;
+
+  document.getElementById("saveToRankBtn").addEventListener("click", () => {
+    box.innerHTML = profileFormHtml(p.nickname, p.phone, p.consent, false);
+    bindProfileForm(lastMs);
+  });
+}
+
+function profileFormHtml(nickname, phone, consent, isEdit){
+  return `
+    <div class="history">
+      <b>${isEdit ? "Профиль для рейтинга" : "Профиль для рейтинга"}</b>
+      <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+        <input id="nickInput" placeholder="Nickname (обязательно)" value="${escapeAttr(nickname)}"
+               style="padding:12px 14px; border-radius:10px; border:1px solid #d1d5db; font-weight:700;"/>
+        <input id="phoneInput" placeholder="Телефон (опционально) 79998887766" value="${escapeAttr(phone)}"
+               inputmode="tel"
+               style="padding:12px 14px; border-radius:10px; border:1px solid #d1d5db; font-weight:700;"/>
+
+        <label style="display:flex; gap:10px; align-items:flex-start; font-size:13px; color:#374151; line-height:1.35;">
+          <input id="consentInput" type="checkbox" ${consent ? "checked" : ""} style="margin-top:3px;"/>
+          <span>Я согласен(на) на обработку персональных данных и публикацию моего nickname в рейтинге.</span>
+        </label>
+
+        <button class="btn-again" id="saveProfileBtn" type="button">Сохранить</button>
+      </div>
+      <div id="profileErr" style="margin-top:8px; color:#b91c1c; font-weight:700;"></div>
+    </div>
+  `;
+}
+
+    function bindProfileForm(lastMs){
+      const err = document.getElementById("profileErr");
+      const nickEl = document.getElementById("nickInput");
+      const phoneEl = document.getElementById("phoneInput");
+      const consentEl = document.getElementById("consentInput");
+      const saveBtn = document.getElementById("saveProfileBtn");
+    
+      saveBtn.addEventListener("click", () => {
+        const nickname = (nickEl.value || "").trim();
+        const phoneRaw = (phoneEl.value || "").trim();
+        const consent = !!consentEl.checked;
+    
+        if (!nickname) {
+          err.textContent = "Введите nickname.";
+          return;
+        }
+        if (!consent) {
+          err.textContent = "Нужно подтвердить согласие.";
+          return;
+        }
+        // телефон опционален, но если ввели — чистим до цифр
+        const phone = phoneRaw ? phoneRaw.replace(/\D/g, "") : "";
+    
+        setProfile({ nickname, phone, consent });
+        err.textContent = "";
+    
+        // перерисуем блок и (важно) отправим результат уже с ником/телефоном
+        // отправка идёт через finish(ms) в Google — ты уже отправляешь phone; добавим nickname в payload на следующем шаге
+        renderRankBox(lastMs);
+      });
+    }
+    
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function escapeAttr(s){
+      return escapeHtml(s).replace(/"/g, "&quot;");
+    }
+    
     startBtn.addEventListener('click', start);
     cancelBtn.addEventListener('click', cancel);
     againBtn.addEventListener('click', start);
