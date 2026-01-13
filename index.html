@@ -216,6 +216,9 @@
         time: formatMs(ms),
         event: eventName,
         anon_id: getAnonId(),
+        user_key: (localStorage.getItem("cg_consent")==="1" && (localStorage.getItem("cg_phone")||"").trim())
+          ? (localStorage.getItem("cg_phone")||"").trim()
+          : getAnonId(),
         phone,
         nickname,
         page: location.href,
@@ -306,25 +309,39 @@ function loadLeaderboard() {
         targets.forEach(t => t.innerHTML = "<b>Рейтинг:</b> пока пусто");
         return;
       }
-      const items = top.map(x => {
-        const seconds = (x.time_ms / 1000).toFixed(1);
-        const date = x.timestamp
-          ? new Date(x.timestamp).toLocaleDateString("ru-RU")
-          : "";
-      
-        return `
-          <li>
-            <b>#${x.rank}</b>
-            ${escapeHtml(x.nickname)}
-            <span style="color:#6b7280;"> · ${date} · ${seconds} c</span>
-          </li>
-        `;
-      }).join("");
-      targets.forEach(t => t.innerHTML = `<b>Рейтинг (топ-20):</b><ul>${items}</ul>`);
+  const myKey = (localStorage.getItem("cg_consent")==="1" && (localStorage.getItem("cg_phone")||"").trim())
+    ? (localStorage.getItem("cg_phone")||"").trim()
+    : (localStorage.getItem("cg_anon_id")||"");
+  
+  const items = top.map(x => {
+    const seconds = (x.time_ms / 1000).toFixed(1);
+    const date = x.timestamp
+      ? new Date(x.timestamp).toLocaleDateString("ru-RU")
+      : "";
+  
+    const isMe = x.key && myKey && String(x.key) === String(myKey);
+  
+    return `
+      <li style="${isMe ? "background:#eef2ff;border-radius:10px;padding:6px 8px;" : ""}">
+        <b>#${x.rank}</b>
+        ${escapeHtml(x.nickname)}${isMe ? ' <b>(вы)</b>' : ''}
+        <span style="color:#6b7280;"> · ${date} · ${seconds} c</span>
+      </li>
+    `;
+  }).join("");
+  
+  targets.forEach(t => {
+    t.innerHTML = `<b>Рейтинг (топ-20):</b><ul>${items}</ul>`;
+  });
     } finally {
       cleanup();
     }
   };
+
+  script.onerror = () => {
+    targets.forEach(t => t.innerHTML = "<b>Рейтинг:</b> не удалось загрузить");
+    cleanup();
+  };  
 
   function cleanup() {
     delete window[cbName];
