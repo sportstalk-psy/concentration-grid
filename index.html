@@ -239,6 +239,7 @@
         time: formatMs(ms),
         anon_id: getAnonId(),
         phone: localStorage.getItem("cg_phone") || "",
+        nickname: localStorage.getItem("cg_nickname") || "",
         page: location.href,
         utm: new URLSearchParams(location.search).toString(),
         ua: navigator.userAgent
