@@ -223,17 +223,18 @@
     
     function sendResult(ms, eventName){
       const consent = localStorage.getItem("cg_consent") === "1";
-      const phone = consent ? (localStorage.getItem("cg_phone") || "") : "";
+      const myPhone = normalizePhone(localStorage.getItem("cg_phone") || "");
+      const phone = consent ? myPhone : "";
       const nickname = consent ? (localStorage.getItem("cg_nickname") || "") : "";
+    
+      const user_key = (consent && myPhone) ? myPhone : getAnonId();
     
       const payload = new URLSearchParams({
         time_ms: String(ms),
         time: formatMs(ms),
         event: eventName,
         anon_id: getAnonId(),
-        user_key: (localStorage.getItem("cg_consent")==="1" && (localStorage.getItem("cg_phone")||"").trim())
-          ? (localStorage.getItem("cg_phone")||"").trim()
-          : getAnonId(),
+        user_key: user_key,
         phone,
         nickname,
         page: location.href,
@@ -297,8 +298,12 @@ function getProfile(){
 }
 
 function setProfile({nickname, phone, consent}){
-  if (nickname) localStorage.setItem("cg_nickname", nickname);
-  if (phone !== undefined) localStorage.setItem("cg_phone", normalizePhone(phoneInputValue));
+  if (nickname !== undefined) localStorage.setItem("cg_nickname", nickname);
+  if (phone !== undefined) {
+    const p = normalizePhone(phone);
+    if (p) localStorage.setItem("cg_phone", p);
+    else localStorage.removeItem("cg_phone");
+  }
   localStorage.setItem("cg_consent", consent ? "1" : "0");
 }
 
@@ -460,7 +465,7 @@ function profileFormHtml(nickname, phone, consent, isEdit){
           return;
         }
         // телефон опционален, но если ввели — чистим до цифр
-        const phone = phoneRaw ? phoneRaw.replace(/\D/g, "") : "";
+        const phone = normalizePhone(phoneRaw);
     
         setProfile({ nickname, phone, consent });
         sendResult(lastMs, "finish_ranked");
