@@ -301,9 +301,20 @@ function loadLeaderboard() {
         el.innerHTML = "<b>Рейтинг:</b> пока пусто";
         return;
       }
-      const items = top.map(x =>
-        `<li><b>#${x.rank}</b> ${escapeHtml(x.nickname)} — <b>${escapeHtml(x.time)}</b></li>`
-      ).join("");
+      const items = top.map(x => {
+        const seconds = (x.time_ms / 1000).toFixed(1);
+        const date = x.timestamp
+          ? new Date(x.timestamp).toLocaleDateString("ru-RU")
+          : "";
+      
+        return `
+          <li>
+            <b>#${x.rank}</b>
+            ${escapeHtml(x.nickname)}
+            <span style="color:#6b7280;"> · ${date} · ${seconds} c</span>
+          </li>
+        `;
+      }).join("");
       el.innerHTML = `<b>Рейтинг (топ-20):</b><ul>${items}</ul>`;
     } finally {
       cleanup();
