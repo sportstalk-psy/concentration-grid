@@ -285,31 +285,43 @@ function setProfile({nickname, phone, consent}){
 
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxcIpdFg1nqxps6YplBC8z4tL3loNXZbBntEx2RNmCTp4SBhdMVeBvojcS5gVgMZWHY/exec";
 
-async function loadLeaderboard() {
+function loadLeaderboard() {
   const el = document.getElementById("leaderboard");
   if (!el) return;
 
   el.innerHTML = "<b>Рейтинг:</b> загружаем…";
 
-  try {
-    const url = `${WEBAPP_URL}?action=leaderboard&limit=20&_=${Date.now()}`;
-    const res = await fetch(url, { method: "GET" });
-    const data = await res.json();
+  const cbName = "lb_cb_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+  const script = document.createElement("script");
 
-    const top = Array.isArray(data.top) ? data.top : [];
-    if (top.length === 0) {
-      el.innerHTML = "<b>Рейтинг:</b> пока пусто";
-      return;
+  window[cbName] = (data) => {
+    try {
+      const top = Array.isArray(data?.top) ? data.top : [];
+      if (top.length === 0) {
+        el.innerHTML = "<b>Рейтинг:</b> пока пусто";
+        return;
+      }
+      const items = top.map(x =>
+        `<li><b>#${x.rank}</b> ${escapeHtml(x.nickname)} — <b>${escapeHtml(x.time)}</b></li>`
+      ).join("");
+      el.innerHTML = `<b>Рейтинг (топ-20):</b><ul>${items}</ul>`;
+    } finally {
+      cleanup();
     }
+  };
 
-    const items = top.map(x =>
-      `<li><b>#${x.rank}</b> ${escapeHtml(x.nickname)} — <b>${escapeHtml(x.time)}</b></li>`
-    ).join("");
-
-    el.innerHTML = `<b>Рейтинг (топ-20):</b><ul>${items}</ul>`;
-  } catch (e) {
-    el.innerHTML = "<b>Рейтинг:</b> не удалось загрузить";
+  function cleanup() {
+    delete window[cbName];
+    script.remove();
   }
+
+  script.onerror = () => {
+    el.innerHTML = "<b>Рейтинг:</b> не удалось загрузить";
+    cleanup();
+  };
+
+  script.src = `${WEBAPP_URL}?action=leaderboard&limit=20&callback=${encodeURIComponent(cbName)}&_=${Date.now()}`;
+  document.body.appendChild(script);
 }
     
 function renderRankBox(lastMs){
