@@ -204,6 +204,32 @@
       localStorage.setItem(key, JSON.stringify(list));
     }
 
+    function sendResult(ms, eventName){
+      const consent = localStorage.getItem("cg_consent") === "1";
+      const phone = consent ? (localStorage.getItem("cg_phone") || "") : "";
+      const nickname = consent ? (localStorage.getItem("cg_nickname") || "") : "";
+    
+      const payload = new URLSearchParams({
+        time_ms: String(ms),
+        time: formatMs(ms),
+        event: eventName,
+        anon_id: getAnonId(),
+        phone,
+        nickname,
+        page: location.href,
+        utm: new URLSearchParams(location.search).toString(),
+        ua: navigator.userAgent
+      }).toString();
+    
+      const url = "https://script.google.com/macros/s/AKfycbxcIpdFg1nqxps6YplBC8z4tL3loNXZbBntEx2RNmCTp4SBhdMVeBvojcS5gVgMZWHY/exec";
+    
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(url, new Blob([payload], { type: "application/x-www-form-urlencoded;charset=UTF-8" }));
+      } else {
+        fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: payload });
+      }
+    }    
+
     function start(){
       expected = 0;
       curEl.textContent = '00';
@@ -233,6 +259,7 @@
       saveHistory(ms);
       renderRankBox(ms);
       finalTimeEl.textContent = formatMs(ms);
+      sendResult(ms, "finish_anonymous");
 
       const payload = new URLSearchParams({
         time_ms: String(ms),
@@ -369,6 +396,7 @@ function profileFormHtml(nickname, phone, consent, isEdit){
         const phone = phoneRaw ? phoneRaw.replace(/\D/g, "") : "";
     
         setProfile({ nickname, phone, consent });
+        sendResult(lastMs, "finish_ranked");
         err.textContent = "";
     
         // перерисуем блок и (важно) отправим результат уже с ником/телефоном
